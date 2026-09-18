@@ -2,10 +2,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models import User
 from app.schemas.user_schema import UserRegister, UserLogin, UserUpdate, PasswordUpdate
-from utils.password import hash_password, verify_password
+from app.utils.password import hash_password, verify_password
 
 def create_user(db: Session,
                 data: UserRegister):
+    user = get_user_by_email(db, data.email)
+    if user is not None:
+        return None
 
     new_user = User(
         email = data.email,
@@ -22,6 +25,12 @@ def create_user(db: Session,
 def get_user_by_email(db: Session,
                       email: str):
     statement = select(User).where(User.email == email)
+    return db.execute(statement).scalar_one_or_none()
+
+
+def get_user_by_username(db: Session,
+                      username: str):
+    statement = select(User).where(User.username == username)
     return db.execute(statement).scalar_one_or_none()
 
 def verify_user(db: Session,
