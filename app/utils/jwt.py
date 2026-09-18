@@ -20,8 +20,8 @@ def create_access_token(data: dict) -> str:
 def verify_token(token: str):
     try:
         token_obj = jwt.decode(
-            JWT_KEY,
             token,
+            JWT_KEY,
             algorithms= [JWT_ALGORITHM],
         )
 
