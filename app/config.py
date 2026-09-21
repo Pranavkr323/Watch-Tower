@@ -6,7 +6,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRY_MINUTES: int
 
-    class config:
-        env_file = '.env'
+    model_config={
+        "env_file" : '.env'
+    }
 
 settings = Settings()
