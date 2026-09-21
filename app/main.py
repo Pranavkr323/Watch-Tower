@@ -1,13 +1,10 @@
 from fastapi import FastAPI
-from app.database import Base, engine
 from app.routers import user_routes, monitor_routes
-from app.models import User, Monitor
 from app.Middleware.time_middleware import TimerMiddleware
 import logging
 
 app = FastAPI()
 
-Base.metadata.create_all(bind=engine)
 logging.basicConfig(level=logging.INFO)
 
 @app.get(
