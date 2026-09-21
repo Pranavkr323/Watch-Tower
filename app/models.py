@@ -24,6 +24,7 @@ class Monitor(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
     threshold: Mapped[Decimal] = mapped_column(DECIMAL(10, 2))
     product_link: Mapped[str] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(nullable=False)
-    status: Mapped[Status] = mapped_column(Enum(Status), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(nullable=False, default= lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(nullable=False, default= lambda: datetime.now(timezone.utc),
+                                                 onupdate= lambda: datetime.now(timezone.utc))
+    status: Mapped[Status] = mapped_column(Enum(Status), nullable=False, default= Status.ACTIVE)
