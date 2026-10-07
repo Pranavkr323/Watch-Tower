@@ -44,6 +44,9 @@ def login_user(userdata: UserLogin, db: Session = Depends(get_db)):
 @router.get("/{username}",
             response_model= UserOut)
 def get_profile(username: str, current_user: User = Depends(get_current_user)):
+    if username != current_user.username:
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN,
+                            detail= "You can only access your own profile!")
     return current_user
 
 @router.patch("/{username}",
@@ -54,7 +57,7 @@ def update_user_profile(username: str,
                 current_user: User = Depends(get_current_user)):
 
     if username != current_user.username:
-        raise HTTPException(status_code= status.HTTP_409_CONFLICT,
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN,
                             detail= "You can only change your own profile!")
 
     if data.email is not None and data.email != current_user.email:

@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.models import Monitor
 from app.schemas.monitor_schema import CreateMonitor, UpdateMonitor
 from app.enums import SortBy, SortOrder
+from app.utils.redis import r
+from app.schemas.monitor_schema import MonitorResponse
 
 def create_monitor(db: Session,
                    data: CreateMonitor,
@@ -26,9 +28,19 @@ def create_monitor(db: Session,
 def get_monitor_by_id(db: Session,
                       monitor_id: int,
                       user_id: int):
+    key = f"monitor:{user_id}:{monitor_id}"
+    cached = r.get(key)
+    if cached:
+        return MonitorResponse.model_validate_json(cached)
+
     statement = select(Monitor).where(Monitor.monitor_id == monitor_id,
                                       Monitor.user_id == user_id)
-    return db.execute(statement).scalar_one_or_none()
+    monitor = db.execute(statement).scalar_one_or_none()
+    if monitor:
+        monitor_resp = MonitorResponse.model_validate(monitor)
+        r.set(key, monitor_resp.model_dump_json(), ex= 300)
+        return monitor_resp
+    return None
 
 def get_all_monitors(db: Session,
                      user_id: int,
@@ -67,7 +79,11 @@ def update_monitor(db: Session,
                    monitor_id: int,
                    user_id: int):
 
-    requested_monitor = get_monitor_by_id(db, monitor_id, user_id)
+    statement = select(Monitor).where(
+        Monitor.monitor_id == monitor_id,
+        Monitor.user_id == user_id
+    )
+    requested_monitor = db.execute(statement).scalar_one_or_none()
     if requested_monitor is None:
         return None
 
@@ -76,24 +92,31 @@ def update_monitor(db: Session,
 
         if existing is not None and existing.monitor_id != monitor_id:
             return "duplicate"
-
         requested_monitor.product_link = str(data.product_link)
     if data.threshold is not None:
         requested_monitor.threshold = data.threshold
 
     db.commit()
     db.refresh(requested_monitor)
+    key = f"monitor:{user_id}:{monitor_id}"
+    r.delete(key)
     return requested_monitor
 
 
 def delete_monitor(db: Session,
                    monitor_id: int,
                    user_id: int):
-    requested_monitor = get_monitor_by_id(db, monitor_id, user_id)
+    statement = select(Monitor).where(
+        Monitor.monitor_id == monitor_id,
+        Monitor.user_id == user_id
+    )
+    requested_monitor = db.execute(statement).scalar_one_or_none()
     if requested_monitor is None:
         return None
 
     db.delete(requested_monitor)
     db.commit()
+    key = f"monitor:{user_id}:{monitor_id}"
+    r.delete(key)
 
     return True
