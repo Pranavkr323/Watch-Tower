@@ -5,8 +5,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRY_MINUTES: int
+    TEST_DATABASE_URL: str
 
-    class config:
-        env_file = '.env'
+    model_config={
+        "env_file" : '.env'
+    }
 
 settings = Settings()
